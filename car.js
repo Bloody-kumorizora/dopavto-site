@@ -11,6 +11,9 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+// ускоритель лучей (BVH): детали расставляются по кузову сотнями лучей — без него это ~1 с на компьютере и несколько секунд на телефоне.
+// Грузится параллельно с моделью; если CDN недоступен — работаем как раньше, только медленнее.
+const bvhReady = import("three-mesh-bvh").then((b) => { THREE.Mesh.prototype.raycast = b.acceleratedRaycast; return b; }).catch(() => null);
 
 const box = document.getElementById("car");
 const loading = document.getElementById("carLoading");
@@ -173,6 +176,7 @@ const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const loader = new GLTFLoader();
 // распаковщик сжатой геометрии (Draco) — с того же CDN и той же версии, что и three.js
 const draco = new DRACOLoader(); draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
+draco.preload();                     // распаковщик качается сразу, параллельно с моделью, а не после неё
 loader.setDRACOLoader(draco);
 loader.load(MODEL_URL, async (gltf) => {
   model = gltf.scene; car.add(model);
@@ -192,6 +196,8 @@ loader.load(MODEL_URL, async (gltf) => {
     if (/^Body/.test(part) && (/^Paint|Mechanical|Mirror/.test(m.name) || m.name === "" || /^Material_\d+$/.test(m.name))) shellMats.add(m);
   });
   model.traverse((o) => { if (/^License/i.test(o.name)) o.visible = false; });   // на номере надпись-товарный знак Khronos — не показываем
+  const bvh = await bvhReady;
+  if (bvh) model.traverse((o) => { if (o.isMesh && !o.geometry.boundsTree) o.geometry.boundsTree = new bvh.MeshBVH(o.geometry); });
   makePivots();
   // задние сиденья 2+2 оказались бы внутри багажника — отрезаем их по передней стенке отсека
   model.traverse((o) => {
