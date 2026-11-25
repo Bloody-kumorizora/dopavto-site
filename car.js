@@ -624,9 +624,12 @@ function screenTexture() {
 // ---------- эффекты поверх
 const fx = new THREE.Group(); scene.add(fx);
 const fxItems = [];
-function clearFx() { fxItems.length = 0; while (fx.children.length) { const c = fx.children.pop(); c.geometry?.dispose(); c.material?.dispose(); } }
+function clearFx() {
+  for (const f of fxItems) { f.mesh.parent?.remove(f.mesh); f.mesh.geometry?.dispose(); f.mesh.material?.dispose(); }
+  fxItems.length = 0;
+}
 const FX_LAYER = 1;
-const addFx = (mesh, tick) => { mesh.layers.set(FX_LAYER); fx.add(mesh); fxItems.push({ mesh, tick }); return mesh; };
+const addFx = (mesh, tick) => { mesh.layers.set(FX_LAYER); fx.add(mesh); fxItems.push({ mesh, tick }); return mesh; };   // можно потом перевесить на деталь (m.add)
 const glowMat = (color, opacity = 0.2) => new THREE.MeshBasicMaterial({ color, transparent: true, opacity, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
 const W = (o) => o.getWorldPosition(new THREE.Vector3());
 // объёмный луч фары: круглый, ярче у источника, края и даль плавно растворяются
@@ -683,10 +686,17 @@ function extraFx(id) {
   if (id === "park") { waves(-1.98, -1); waves(2.45, 1); }
   if (id === "fog") (svc.fog || []).forEach((m) => lightBeam(W(m), fw.clone().add(new THREE.Vector3(0, -0.09, 0)), 3.4, 0.75, "#fff1cf"));
   if (id === "sound") (svc.sound || []).filter((m) => m.geometry.type === "CylinderGeometry" && !m.userData.pulse).forEach((m) => {
-    const p = W(m); const out = Math.sign(p.z) || 1;
+    const onDoor = m.parent === pivots.doorL || m.parent === pivots.doorR;
     for (let i = 0; i < 2; i++) {
       const r = addFx(new THREE.Mesh(new THREE.RingGeometry(0.09, 0.105, 40), glowMat("#F5A623", 0.6)), (t) => { const k = (t * 1.1 + i / 2) % 1; r.scale.setScalar(1 + k * 3); r.material.opacity = 0.6 * (1 - k); });
-      r.position.copy(p); r.position.z -= out * 0.06;
+      if (onDoor) {
+        // кольца — часть динамика: лежат на обшивке двери со стороны салона и двигаются вместе с дверью
+        const toCabin = model.worldToLocal(W(m)).x > 0 ? 1 : -1;   // ось цилиндра (local Y) смотрит в салон
+        m.add(r); r.rotation.x = Math.PI / 2; r.position.set(0, toCabin * 0.016, 0);
+      } else {
+        const p = W(m); const out = Math.sign(p.z) || 1;
+        r.position.copy(p); r.position.z -= out * 0.06;
+      }
     }
   });
 }
