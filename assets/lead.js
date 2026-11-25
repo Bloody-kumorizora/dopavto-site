@@ -8,7 +8,9 @@ window.Lead = (function () {
   // Демо без сервера: заявка сохраняется в этом браузере, и её видно в демо-кабинете (admin/)
   function keepDemo(data) {
     try {
-      const list = JSON.parse(localStorage.getItem("demo-leads") || "[]");
+      let list = [];
+      try { list = JSON.parse(localStorage.getItem("demo-leads") || "[]"); } catch { /* битая запись — начинаем список заново */ }
+      if (!Array.isArray(list)) list = [];
       list.unshift({ id: Date.now(), created_at: new Date().toISOString(), site: data.site, name: String(data.name || "").trim().slice(0, 60),
         phone: String(data.phone || "").trim().slice(0, 30), details: (data.details || []).slice(0, 25), comment: String(data.comment || "").slice(0, 500), status: "new", demo: true });
       localStorage.setItem("demo-leads", JSON.stringify(list.slice(0, 50)));

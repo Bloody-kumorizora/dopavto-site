@@ -51,7 +51,22 @@
     setTimeout(markReady, S.length * 45 + 700);
   }, { once: true });
   chips.setAttribute("aria-hidden", "true"); chips.querySelectorAll(".chip").forEach((b) => (b.disabled = true));
-  setTimeout(() => { if (!chips.classList.contains("show")) window.dispatchEvent(new Event("car:arrived")); }, 12000);   // страховка, если 3D не загрузилось
+  // 3D-движок не загрузился (CDN заблокирован или висит): вместо вечного «Загружаем машину 0%» — фото работы.
+  // Если car.js всё же догрузится позже, он сам уберёт это фото и покажет машину.
+  function carFallback() {
+    const box = $("car"); if (!box || box.querySelector(".car-fallback")) return;
+    const ld = $("carLoading"); if (ld) ld.style.display = "none";
+    const img = document.createElement("img");
+    img.className = "car-fallback"; img.src = "img/work-1.webp"; img.alt = "Android-магнитола в Nissan";
+    box.appendChild(img);
+    if (!chips.classList.contains("show")) window.dispatchEvent(new Event("car:arrived"));   // услуги доступны сразу, ждать нечего
+  }
+  // ошибка загрузки car.js или его импортов с CDN приходит событием error на тег <script> (без всплытия — ловим на погружении)
+  addEventListener("error", (e) => { if (e.target instanceof HTMLScriptElement && /\/car\.js/.test(e.target.src)) carFallback(); }, true);
+  setTimeout(() => {   // страховка, если 3D не загрузилось
+    if (!chips.classList.contains("show")) window.dispatchEvent(new Event("car:arrived"));
+    if (!$("car")?.querySelector("canvas")) carFallback();   // модуль car.js так и не запустился
+  }, 12000);
   // клик по детали на машине тоже выбирает услугу
   window.addEventListener("car:pick", (e) => select(e.detail));
   window.addEventListener("car:ready", () => { const first = new URLSearchParams(location.search).get("s"); if (first && S.some((x) => x.id === first)) select(first); });
@@ -138,10 +153,11 @@
   $("askForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const car = $("fCar").value.trim(), phone = $("fPhone").value.trim(), name = $("fName").value.trim();
-    const digits = phone.replace(/\D/g, "");
+    const digits = phone.replace(/\D/g, ""), year = $("fYear").value.trim();
     let msg = "";
     if (!car) { msg = "Напишите марку и модель, чтобы я мог подобрать оборудование."; $("fCar").focus(); }
-    else if (digits.length < 10) { msg = "Проверьте телефон: в номере должно быть 10–11 цифр."; $("fPhone").focus(); }
+    else if (year && !(/^\d{4}$/.test(year) && +year >= 1950 && +year <= new Date().getFullYear() + 1)) { msg = "Проверьте год выпуска: четыре цифры, например 2016. Можно оставить пустым."; $("fYear").focus(); }
+    else if (digits.length < 10 || digits.length > 11) { msg = "Проверьте телефон: в номере должно быть 10–11 цифр."; $("fPhone").focus(); }
     else if (!$("fConsent").checked) { msg = "Отметьте согласие на обработку имени и телефона, без него заявку не принять."; $("fConsent").focus(); }
     $("fErr").textContent = msg; if (msg) return;
     const chosen = [...pick.querySelectorAll('[aria-pressed="true"]')].map((b) => b.textContent);
@@ -149,7 +165,7 @@
     Lead.busy(btn, true, "Отправляем…");
     const res = await Lead.send({
       site: "dopavto", name, phone, consent: true, website: $("fHp").value,
-      details: [`Машина: ${car}${$("fYear").value ? ", " + $("fYear").value.trim() : ""}`, ...(chosen.length ? ["Поставить: " + chosen.join(", ")] : [])],
+      details: [`Машина: ${car}${year ? ", " + year : ""}`, ...(chosen.length ? ["Поставить: " + chosen.join(", ")] : [])],
       comment: $("fNote").value
     });
     Lead.busy(btn, false);

@@ -12,7 +12,7 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preload" href="carconcept-draco.glb?v=3" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
-<link rel="stylesheet" href="style.css?v=74">
+<link rel="stylesheet" href="style.css?v=75">
 </head>
 <body>
 
@@ -110,17 +110,17 @@
       <div id="formBox">
         <form id="askForm" novalidate>
           <div class="row2">
-            <label>Марка и модель<input id="fCar" name="car" autocomplete="off" placeholder="Например, Kia Rio"></label>
+            <label>Марка и модель<input id="fCar" name="car" autocomplete="off" maxlength="80" placeholder="Например, Kia Rio"></label>
             <label>Год<input id="fYear" name="year" inputmode="numeric" maxlength="4" placeholder="2016"></label>
           </div>
           <fieldset>
             <legend>Что поставить</legend>
             <div class="pick" id="fPick"></div>
           </fieldset>
-          <label><span class="lbl">Комментарий <span class="opt">необязательно</span></span><textarea id="fNote" name="note" placeholder="Например, хочу магнитолу с CarPlay и камеру заднего вида"></textarea></label>
+          <label><span class="lbl">Комментарий <span class="opt">необязательно</span></span><textarea id="fNote" name="note" maxlength="500" placeholder="Например, хочу магнитолу с CarPlay и камеру заднего вида"></textarea></label>
           <div class="row2">
-            <label>Имя<input id="fName" name="name" autocomplete="given-name"></label>
-            <label>Телефон<input id="fPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7"></label>
+            <label>Имя<input id="fName" name="name" autocomplete="given-name" maxlength="60"></label>
+            <label>Телефон<input id="fPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="+7"></label>
           </div>
           <input class="hp" id="fHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
           <label class="consent"><input type="checkbox" id="fConsent"> <span>Согласен на обработку имени и телефона, чтобы со мной связались по заявке. <a href="privacy.html" target="_blank">Политика</a></span></label>
@@ -164,16 +164,16 @@
 </footer>
 <div class="demo-ribbon" id="ribbon">Черновик сайта для DopAvto. Цены и контакты уточняются</div>
 
-<script src="assets/lead.js"></script>
+<script src="assets/lead.js?v=7"></script>
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-  "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.8.3/build/index.module.js"
+  "three": "./vendor/three/build/three.module.js",
+  "three/addons/": "./vendor/three/examples/jsm/",
+  "three-mesh-bvh": "./vendor/three-mesh-bvh/build/index.module.js"
 } }
 </script>
 <script src="services.js?v=53"></script>
-<script src="page.js?v=72"></script>
-<script type="module" src="car.js?v=81"></script>
+<script src="page.js?v=73"></script>
+<script type="module" src="car.js?v=83"></script>
 </body>
 </html>

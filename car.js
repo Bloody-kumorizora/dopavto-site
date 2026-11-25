@@ -27,6 +27,7 @@ const markArrived = () => { if (arrived) return; arrived = true; window.dispatch
 function fallback(msg) {
   markArrived();
   loading?.remove();
+  if (box.querySelector(".car-fallback")) return console.warn("3D недоступно:", msg);   // фото уже поставил page.js
   const img = document.createElement("img");
   img.className = "car-fallback"; img.src = "img/work-1.webp"; img.alt = "Android-магнитола в Nissan";
   box.appendChild(img);
@@ -54,7 +55,7 @@ scene.background = new THREE.Color("#121821");
 scene.fog = new THREE.Fog("#121821", 10, 24);   // пол растворяется вдали, без видимого края
 
 // ---------- студийное окружение: софтбоксы над машиной и по бокам — дают «автомобильные» блики
-const pmrem = new THREE.PMREMGenerator(renderer);
+let pmrem = new THREE.PMREMGenerator(renderer);
 function studio() {
   const s = new THREE.Scene();
   s.background = new THREE.Color("#0c1016");
@@ -72,6 +73,13 @@ function studio() {
   return pmrem.fromScene(s, 0.03).texture;
 }
 scene.environment = studio();
+// телефон мог отобрать у вкладки WebGL (свернули, не хватило памяти). three.js сам поднимает контекст,
+// но готовая карта окружения в видеопамяти пропадает — машина становится тёмной и без бликов. Собираем её заново.
+renderer.domElement.addEventListener("webglcontextrestored", () => {
+  const old = scene.environment;
+  pmrem.dispose(); pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = studio(); old?.dispose();
+});
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 60);
 camera.layers.enable(1);   // слой эффектов (лучи, конусы): видит только основная камера, не отражение в полу
@@ -174,8 +182,8 @@ const add = (id, mesh) => { (svc[id] ||= []).push(mesh); mesh.userData.svc = id;
 
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const loader = new GLTFLoader();
-// распаковщик сжатой геометрии (Draco) — с того же CDN и той же версии, что и three.js
-const draco = new DRACOLoader(); draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
+// распаковщик сжатой геометрии (Draco) — свой, из vendor/ (three.js 0.160.0), без внешнего CDN
+const draco = new DRACOLoader(); draco.setDecoderPath(new URL("vendor/three/examples/jsm/libs/draco/gltf/", document.baseURI).href);
 draco.preload();                     // распаковщик качается сразу, параллельно с моделью, а не после неё
 loader.setDRACOLoader(draco);
 loader.load(MODEL_URL, async (gltf) => {
@@ -221,6 +229,7 @@ loader.load(MODEL_URL, async (gltf) => {
   model.traverse((o) => { if (o.isMesh && o.material?.name === "Headlight") { headMats.add(o.material); o.material.emissiveIntensity = (o.material.emissiveIntensity ?? 1) * 0.55; o.material.userData.e = o.material.emissiveIntensity; } });
   if (!reduce) { intro.on = true; intro.t = 0; car.position.x = -INTRO_DIST; controls.autoRotate = false; camera.position.set(3.4, 1.0, -5.2); camGoal = { pos: new THREE.Vector3(...HOME.pos), target: new THREE.Vector3(...HOME.target), slow: true }; }
   loading.remove();
+  box.querySelector(".car-fallback")?.remove();   // 3D догрузилось после страховки page.js — фото больше не нужно
   window.dispatchEvent(new Event("car:ready"));
   if (reduce) markArrived();
   resize(); start();
