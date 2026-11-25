@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DopAvto — установка магнитол, камер и автозвука в Дзержинском</title>
+<meta name="description" content="Установка Android-магнитол, камер заднего вида и 360°, парктроников, автозвука, подсветки салона и электропривода багажника в Дзержинском. Свой гараж и выезд по адресу, гарантия 12 месяцев, консультация бесплатно.">
+<meta property="og:title" content="DopAvto — магнитолы, камеры и автозвук в Дзержинском">
+<meta property="og:description" content="Покрутите машину и посмотрите, что изменится после установки. Консультация бесплатно, можно с выездом.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#121821">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="preload" href="carconcept.glb?v=1" as="fetch" crossorigin>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="style.css?v=72">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#" aria-label="DopAvto, наверх">
+      <img src="logo.svg" alt="" width="32" height="32">
+      DopAvto
+    </a>
+    <nav aria-label="Разделы">
+      <a href="#works">Примеры работ</a>
+      <a href="#how">Как работаю</a>
+      <a href="#ask">Узнать цену</a>
+      <a href="#contacts">Контакты</a>
+    </nav>
+    <a class="btn btn-amber" href="#ask">Узнать цену</a>
+  </div>
+</header>
+
+<main>
+  <section class="stage" aria-labelledby="h1">
+    <div class="stage-grid">
+      <div class="intro">
+        <h1 id="h1"><span class="h1-line"><span>Магнитолы,</span></span><span class="h1-line"><span>камеры и&nbsp;звук</span></span><span class="h1-line"><span>в&nbsp;вашу машину</span></span></h1>
+        <p>Подберу, установлю и&nbsp;настрою аккуратно, без висящих проводов. Свой гараж в Дзержинском или выезд к вам. Опыт 7&nbsp;лет, гарантия на&nbsp;работу 12&nbsp;месяцев.</p>
+      </div>
+
+      <div class="car" id="car">
+        <div class="car-loading" id="carLoading">Загружаем машину…</div>
+        <div class="car-tools" role="group" aria-label="Приближение">
+          <button type="button" id="zoomIn" aria-label="Приблизить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button type="button" id="zoomOut" aria-label="Отдалить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <button type="button" id="zoomReset" aria-label="Вернуть вид"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
+        </div>
+        <div class="car-hint" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 12h16M4 12l3-3M4 12l3 3M20 12l-3-3M20 12l-3 3"/></svg>
+          <span class="h-desk">Тяните, чтобы покрутить. Кликните по машине и крутите колесо, чтобы приблизить</span><span class="h-touch">Тяните пальцем. Щипок двумя пальцами — приблизить</span>
+        </div>
+      </div>
+
+      <div class="chips" role="group" aria-label="Что установить" id="chips"></div>
+
+      <aside class="panel" aria-live="polite">
+        <div class="panel-body" id="panelBody"></div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="light" id="works" aria-labelledby="worksH">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="worksH">Примеры работ</h2>
+        <p>Магнитолы встают в штатное место, рамка подбирается под панель, провода спрятаны. Нажмите на фото, чтобы рассмотреть.</p>
+      </div>
+      <div class="works">
+        <figure class="w1"><img src="img/work-1.webp" alt="Nissan: Android-магнитола с широким экраном на месте штатной" loading="lazy" width="640" height="480"><figcaption><b>Nissan</b>Широкий экран на месте штатной магнитолы</figcaption></figure>
+        <figure class="w2"><img src="img/work-2.webp" alt="Hyundai: синяя контурная подсветка дверей и магнитола" loading="lazy" width="640" height="480"><figcaption><b>Hyundai</b>Контурная подсветка салона и магнитола</figcaption></figure>
+        <figure class="w3"><img src="img/work-3.webp" alt="Volkswagen: Android-магнитола в штатной рамке" loading="lazy" width="640" height="480"><figcaption><b>Volkswagen</b>Android-магнитола в штатную рамку</figcaption></figure>
+        <figure class="w4 tall"><img src="img/work-4.webp" alt="Toyota: магнитола в деревянной панели" loading="lazy" width="360" height="480"><figcaption><b>Toyota</b>Магнитола под дерево панели</figcaption></figure>
+        <figure class="w5"><img src="img/work-5.webp" alt="Peugeot: Android-магнитола с навигатором" loading="lazy" width="640" height="480"><figcaption><b>Peugeot</b>Магнитола с навигатором</figcaption></figure>
+        <figure class="w6 tall"><img src="img/work-6.webp" alt="Mercedes-Benz Sprinter: магнитола с эквалайзером" loading="lazy" width="360" height="480"><figcaption><b>Mercedes Sprinter</b>Магнитола и настройка звука</figcaption></figure>
+        <figure class="w7 tall"><img src="img/work-7.webp" alt="Volkswagen Tiguan: Android-магнитола" loading="lazy" width="360" height="480"><figcaption><b>Volkswagen</b>Android-магнитола</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="light" id="how" aria-labelledby="howH" style="padding-top:0">
+    <div class="wrap">
+      <div class="section-head"><h2 id="howH">Как работаю</h2></div>
+      <ol class="steps">
+        <li><h3>Звоните или оставляете заявку</h3><p>Назовите марку, модель, год и что хотите поставить.</p></li>
+        <li><h3>Подбираю варианты</h3><p>Скажу, что подойдёт к вашей машине и сколько стоит. Консультация бесплатная.</p></li>
+        <li><h3>Ставлю и настраиваю</h3><p>В своём гараже в Дзержинском или с выездом по вашему адресу. На работу даю гарантию 12 месяцев.</p></li>
+      </ol>
+      <div class="also">
+        <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 23V11h16v12M19 15h7l5 5v3H19"/><circle cx="9" cy="25" r="3"/><circle cx="25" cy="25" r="3"/></svg>
+        <p><b>Грузовики и тягачи тоже.</b> Ставлю Android-системы и автозвук в грузовой транспорт.</p>
+      </div>
+      <p class="also" style="margin-top:12px"><svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 21a10 10 0 0 1 20 0M11 21a6 6 0 0 1 12 0"/><circle cx="17" cy="21" r="2"/></svg>
+      <span><b>Плохо играет штатная музыка?</b> Не обязательно менять всё. Посмотрю систему и скажу, что действительно стоит заменить.</span></p>
+    </div>
+  </section>
+
+  <section class="light ask" id="ask" aria-labelledby="askH">
+    <div class="wrap ask-grid">
+      <div>
+        <h2 id="askH">Узнать цену для вашей машины</h2>
+        <p>Напишите марку и что хотите поставить. Перезвоню, подскажу варианты и назову стоимость работ. Это бесплатно.</p>
+        <ul class="trust">
+          <li><b>12 месяцев</b><span>гарантия на работы</span></li>
+          <li><b>7 лет</b><span>ставлю оборудование в машины</span></li>
+          <li><b>Гараж или выезд</b><span>в Дзержинском или у вас</span></li>
+        </ul>
+      </div>
+      <div id="formBox">
+        <form id="askForm" novalidate>
+          <div class="row2">
+            <label>Марка и модель<input id="fCar" name="car" autocomplete="off" placeholder="Например, Kia Rio"></label>
+            <label>Год<input id="fYear" name="year" inputmode="numeric" maxlength="4" placeholder="2016"></label>
+          </div>
+          <fieldset>
+            <legend>Что поставить</legend>
+            <div class="pick" id="fPick"></div>
+          </fieldset>
+          <label><span class="lbl">Комментарий <span class="opt">необязательно</span></span><textarea id="fNote" name="note" placeholder="Например, хочу магнитолу с CarPlay и камеру заднего вида"></textarea></label>
+          <div class="row2">
+            <label>Имя<input id="fName" name="name" autocomplete="given-name"></label>
+            <label>Телефон<input id="fPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7"></label>
+          </div>
+          <input class="hp" id="fHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="consent"><input type="checkbox" id="fConsent"> <span>Согласен на обработку имени и телефона, чтобы со мной связались по заявке. <a href="privacy.html" target="_blank">Политика</a></span></label>
+          <p class="err" id="fErr" role="alert"></p>
+          <button class="btn btn-ink" type="submit" id="fSend">Отправить заявку</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="light contacts" id="contacts" aria-labelledby="contactsH">
+    <div class="wrap">
+      <div class="section-head"><h2 id="contactsH">Где и когда</h2></div>
+      <div class="contacts-grid">
+        <div><span>Где</span>Гараж в&nbsp;Дзержинском, рядом метро Котельники. Можно с&nbsp;выездом к&nbsp;вам</div>
+        <div><span>Работаю</span>Каждый день, 9:00–19:00</div>
+        <div><span>Связь</span>Звонки и MAX, 8:00–21:00</div>
+        <div><span>Гарантия</span>12&nbsp;месяцев на все работы</div>
+      </div>
+      <a class="btn btn-amber" id="callBtn" href="https://www.avito.ru/dzerzhinskiy/predlozheniya_uslug/dopolnitelnoe_elektro_oborudavie_dlya_avto_8574921726" target="_blank" rel="noopener">Позвонить через Авито</a>
+    </div>
+  </section>
+</main>
+
+<dialog class="lightbox" id="lightbox" aria-label="Фото работы">
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption><b id="lbTitle"></b><span id="lbText"></span><span class="lb-count" id="lbCount"></span></figcaption>
+  </figure>
+  <button class="lb-btn lb-prev" type="button" id="lbPrev" aria-label="Предыдущее фото"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <button class="lb-btn lb-next" type="button" id="lbNext" aria-label="Следующее фото"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  <button class="lb-btn lb-close" type="button" id="lbClose" aria-label="Закрыть"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</dialog>
+
+<footer>
+  <div class="wrap">
+    <span>DopAvto, установка дополнительного оборудования в автомобили. Дзержинский</span>
+    <span>3D-модель: <a href="https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept" target="_blank" rel="noopener">Car Concept</a>, Khronos Group и Unity Fan, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a></span>
+    <a href="privacy.html">Политика конфиденциальности</a>
+  </div>
+</footer>
+<div class="demo-ribbon" id="ribbon">Черновик сайта для DopAvto. Цены и контакты уточняются</div>
+
+<script src="assets/lead.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script src="services.js?v=53"></script>
+<script src="page.js?v=72"></script>
+<script type="module" src="car.js?v=73"></script>
+</body>
+</html>

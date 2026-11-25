@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Политика конфиденциальности — шаблон для демо</title>
+<meta name="description" content="Как сайт обрабатывает имя и телефон из формы записи или заказа. Шаблон для демо-сайтов.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#F1F3F7">
+<link rel="stylesheet" href="assets/fonts/hub.css">
+<style>
+:root{--ink:#1D2230;--muted:#5F6577;--bg:#F1F3F7;--card:#fff;--accent:#2F5BEA;--line:#E1E5EE;--warn:#FFF4D6;--warn-ink:#6B4E00}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:17px/1.65 "Golos Text",system-ui,sans-serif;color:var(--ink);background:var(--bg)}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+main{max-width:760px;margin:0 auto;padding:56px 24px 72px}
+.demo{background:var(--warn);color:var(--warn-ink);border-radius:14px;padding:18px 20px;margin-bottom:36px;font-size:16px}
+.demo b{display:block;margin-bottom:4px}
+h1{font-size:clamp(30px,5vw,44px);line-height:1.1;letter-spacing:-.02em;margin-bottom:12px;text-wrap:balance}
+.lead{color:var(--muted);margin-bottom:36px}
+h2{font-size:22px;line-height:1.25;margin:34px 0 10px;text-wrap:balance}
+p,li{margin-bottom:10px;max-width:68ch;text-wrap:pretty}
+ul{padding-left:22px}
+.fill{background:#FFE7A3;border-radius:4px;padding:0 3px}
+.back{display:inline-block;margin-top:40px;font-weight:600}
+@media (max-width:600px){main{padding:36px 16px 56px}}
+</style>
+</head>
+<body>
+<main>
+  <div class="demo" role="note"><b>Это шаблон для демо-сайтов.</b>Названия, адреса и реквизиты придуманы. Перед запуском настоящего сайта замените выделенные места на данные владельца и покажите текст юристу.</div>
+
+  <h1>Как мы обращаемся с вашими данными</h1>
+  <p class="lead">Коротко: мы берём только имя и телефон, чтобы записать вас или отложить заказ. Никому их не продаём и удаляем через 90 дней.</p>
+
+  <h2>Кто обрабатывает данные</h2>
+  <p><span class="fill">ИП Иванов Иван Иванович, ИНН 000000000000</span>, адрес: <span class="fill">г. Город, ул. Улица, 1</span>. Дальше по тексту «мы».</p>
+  <p>Связаться по вопросам данных: <span class="fill">+7 999 000-00-00</span>, <span class="fill">почта@пример.рф</span>.</p>
+
+  <h2>Что мы собираем</h2>
+  <ul>
+    <li>Имя: чтобы знать, как к вам обращаться и кого записали.</li>
+    <li>Телефон: чтобы подтвердить запись или заказ и напомнить о визите.</li>
+    <li>Комментарий и выбранные услуги, если вы их указали.</li>
+  </ul>
+  <p>Мы не собираем паспортные данные, адрес, дату рождения и данные карт. Оплата проходит на месте.</p>
+  <p>Сайт может использовать Яндекс Метрику, чтобы понимать, какие страницы смотрят. Она работает с обезличенными данными: какие страницы открывали и с какого устройства.</p>
+
+  <h2>Зачем</h2>
+  <p>Только чтобы принять и выполнить вашу заявку: записать к мастеру, отложить заказ, перезвонить и напомнить. Рекламу по этим данным мы не рассылаем.</p>
+
+  <h2>Где и сколько хранятся</h2>
+  <p>Заявки хранятся на сервере хостинга в России: <span class="fill">название хостинга</span>. Через 90 дней они удаляются автоматически.</p>
+  <p>Уведомление о новой заявке приходит администратору в <span class="fill">Telegram</span>.</p>
+
+  <h2>Кому передаём</h2>
+  <p>Никому, кроме сотрудников, которые принимают записи и заказы. Исключение: если этого требует закон.</p>
+
+  <h2>Ваши права</h2>
+  <p>Вы можете в любой момент попросить показать, какие данные о вас у нас есть, исправить их или удалить. Позвоните или напишите по контактам выше, ответим в течение 10 рабочих дней.</p>
+  <p>Согласие можно отозвать так же. После этого мы удалим заявку, но тогда не сможем подтвердить запись по телефону.</p>
+
+  <h2>Согласие</h2>
+  <p>Отправляя форму на сайте с отмеченной галочкой согласия, вы соглашаетесь на обработку имени, телефона и комментария на условиях выше. Без галочки форма не отправится.</p>
+
+  <p style="color:var(--muted);margin-top:30px">Редакция от <span class="fill">1 декабря 2026 года</span>.</p>
+</main>
+</body>
+</html>
