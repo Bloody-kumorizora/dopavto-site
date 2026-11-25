@@ -16,6 +16,7 @@ const loading = document.getElementById("carLoading");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const AMBER = new THREE.Color("#F5A623");
 const MODEL_URL = "carconcept.glb?v=1";
+const MODEL_BYTES = 11778688;   // настоящий размер модели — для честного процента загрузки
 
 let arrived = false;
 const markArrived = () => { if (arrived) return; arrived = true; window.dispatchEvent(new Event("car:arrived")); };
@@ -213,7 +214,14 @@ loader.load(MODEL_URL, async (gltf) => {
   window.dispatchEvent(new Event("car:ready"));
   if (reduce) markArrived();
   resize(); start();
-}, (p) => { if (p.total) loading.textContent = `Загружаем машину… ${Math.round(p.loaded / p.total * 100)}%`; }, (e) => fallback(e));
+}, (p) => {
+  // хостинг может отдавать модель сжатой: тогда p.total — размер сжатого файла, а p.loaded — уже распакованные байты.
+  // Считаем от настоящего размера модели и не даём счётчику перевалить за 99%, пока модель не готова.
+  const pct = Math.min(99, Math.round(p.loaded / Math.max(p.total || 0, MODEL_BYTES) * 100));
+  const bar = loading.querySelector("i"), num = loading.querySelector("b");
+  if (bar) bar.style.transform = `scaleX(${pct / 100})`;
+  if (num) num.textContent = pct + "%";
+}, (e) => fallback(e));
 
 // ---------- процедурные текстуры: карбон, перфорированная кожа, металлическая искра
 function canvasTex(size, draw, repeat, srgb = false) {

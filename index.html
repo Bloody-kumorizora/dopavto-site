@@ -12,7 +12,7 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preload" href="carconcept.glb?v=1" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
-<link rel="stylesheet" href="style.css?v=72">
+<link rel="stylesheet" href="style.css?v=74">
 </head>
 <body>
 
@@ -41,7 +41,7 @@
       </div>
 
       <div class="car" id="car">
-        <div class="car-loading" id="carLoading">Загружаем машину…</div>
+        <div class="car-loading" id="carLoading" role="status"><div><span>Загружаем машину</span><b>0%</b><s><i></i></s></div></div>
         <div class="car-tools" role="group" aria-label="Приближение">
           <button type="button" id="zoomIn" aria-label="Приблизить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
           <button type="button" id="zoomOut" aria-label="Отдалить"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
@@ -173,6 +173,6 @@
 </script>
 <script src="services.js?v=53"></script>
 <script src="page.js?v=72"></script>
-<script type="module" src="car.js?v=73"></script>
+<script type="module" src="car.js?v=74"></script>
 </body>
 </html>

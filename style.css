@@ -463,3 +463,10 @@ html.lb-open { overflow: hidden; }
 .car.engaged .car-hint { opacity: 0; }
 @media (max-width: 980px) { .car-tools { bottom: 12px; left: 12px; grid-auto-flow: column; } .car-tools button { width: 36px; height: 36px; } }
 @media (prefers-reduced-motion: reduce) { .chips.show .chip { animation: none; opacity: 1; transform: none; } }
+
+/* ---------- загрузка машины: подпись, проценты и тонкая полоска */
+.car-loading > div { display: grid; grid-template-columns: auto auto; gap: 10px 14px; align-items: baseline; width: min(280px, 70%); }
+.car-loading span { color: var(--on-night-muted); font-size: .9rem; }
+.car-loading b { justify-self: end; font: 600 .9rem/1 "Golos Text", sans-serif; color: var(--on-night); font-variant-numeric: tabular-nums; }
+.car-loading s { grid-column: 1 / -1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; text-decoration: none; }
+.car-loading i { display: block; height: 100%; background: var(--amber); transform: scaleX(0); transform-origin: left; transition: transform .25s ease; box-shadow: 0 0 12px rgba(245,166,35,.6); }
