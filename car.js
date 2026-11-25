@@ -35,17 +35,24 @@ function fallback(msg) {
 }
 
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" }); }
+// antialias холста не нужен: кадр рисуется в буфер постобработки и выводится на экран одним прямоугольником,
+// а 4× MSAA на холсте только тратит память и пропускную способность видеочипа (особенно на телефоне)
+try { renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" }); }
 catch (e) { fallback(e); throw e; }
 const SMALL = Math.min(innerWidth, innerHeight) < 700;   // телефон: без зеркального пола, полегче
-renderer.setPixelRatio(Math.min(devicePixelRatio, SMALL ? 1.75 : 2));
+const PHONE = SMALL || matchMedia("(pointer: coarse)").matches;   // телефон или планшет: картинка проще, тени дешевле
+let pixelRatio = Math.min(devicePixelRatio, PHONE ? 1.5 : 2);
+renderer.setPixelRatio(pixelRatio);
 renderer.setClearColor("#121821");
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true;
 renderer.localClippingEnabled = true;
 const trunkClip = new THREE.Plane();   // всё, что за передней стенкой багажника (задние сиденья), не рисуем
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = PHONE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+// тень пересчитываем только когда что-то в машине двигается (въезд, двери, багажник), а не каждый кадр:
+// иначе вся машина рисуется дважды за кадр. Камера крутится — тень на полу та же.
+renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 box.appendChild(renderer.domElement);
 renderer.domElement.setAttribute("aria-label", "3D-модель машины. Тяните, чтобы покрутить");
 renderer.domElement.setAttribute("role", "img");
@@ -79,7 +86,11 @@ renderer.domElement.addEventListener("webglcontextrestored", () => {
   const old = scene.environment;
   pmrem.dispose(); pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = studio(); old?.dispose();
+  renderer.shadowMap.needsUpdate = true; invalidate();
 });
+// кадр рисуется только когда на экране что-то меняется; dirty — сколько кадров дорисовать после события
+let dirty = 2;
+const invalidate = () => { dirty = 2; };
 
 const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 60);
 camera.layers.enable(1);   // слой эффектов (лучи, конусы): видит только основная камера, не отражение в полу
@@ -99,7 +110,7 @@ renderer.domElement.style.touchAction = "pan-y";
 
 const hemi = new THREE.HemisphereLight("#d6e0ee", "#0b0f14", 0.35); scene.add(hemi);
 const key = new THREE.DirectionalLight("#fff3e3", 1.6); key.position.set(2.5, 8, -2);
-key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+key.castShadow = true; key.shadow.mapSize.setScalar(PHONE ? 1024 : 2048);
 Object.assign(key.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 20 });
 key.shadow.bias = -0.0003; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
 scene.add(key);
@@ -227,6 +238,20 @@ loader.load(MODEL_URL, async (gltf) => {
     spin: g.children.filter((c) => !/BrakePad/i.test(c.name)),                                                  // суппорт стоит на месте
   }));
   model.traverse((o) => { if (o.isMesh && o.material?.name === "Headlight") { headMats.add(o.material); o.material.emissiveIntensity = (o.material.emissiveIntensity ?? 1) * 0.55; o.material.userData.e = o.material.emissiveIntensity; } });
+  // шейдеры эффектов и пока скрытых деталей собираем сейчас, на экране загрузки, а не в момент нажатия на услугу:
+  // на iPhone сборка шейдера — заметная пауза. Собираем под буфер постобработки — туда идёт основной кадр.
+  for (const s of window.SERVICES || []) extraFx(s.id);
+  renderer.setRenderTarget(composer.renderTarget1);
+  renderer.compile(scene, camera);
+  // рентген (автозвук, регистратор) и открытая крыша делают кузов прозрачным — это другой вариант шейдера, его тоже заранее
+  const seeThrough = [...shellMats, ...roofMats, ...glassMats], wasT = seeThrough.map((m) => m.transparent);
+  seeThrough.forEach((m) => (m.transparent = true));
+  renderer.compile(scene, camera);
+  seeThrough.forEach((m, i) => (m.transparent = wasT[i]));
+  renderer.setRenderTarget(null);
+  // пробные эффекты убираем, но их материалы не освобождаем: иначе three.js выкинет только что собранные шейдеры
+  for (const f of fxItems) { f.mesh.parent?.remove(f.mesh); f.mesh.geometry?.dispose(); warmMats.push(f.mesh.material); }
+  fxItems.length = 0;
   if (!reduce) { intro.on = true; intro.t = 0; car.position.x = -INTRO_DIST; controls.autoRotate = false; camera.position.set(3.4, 1.0, -5.2); camGoal = { pos: new THREE.Vector3(...HOME.pos), target: new THREE.Vector3(...HOME.target), slow: true }; }
   loading.remove();
   box.querySelector(".car-fallback")?.remove();   // 3D догрузилось после страховки page.js — фото больше не нужно
@@ -639,6 +664,7 @@ function screenTexture() {
 // ---------- эффекты поверх
 const fx = new THREE.Group(); scene.add(fx);
 const fxItems = [];
+const warmMats = [];   // держат заранее собранные шейдеры эффектов живыми (см. загрузку модели)
 function clearFx() {
   for (const f of fxItems) { f.mesh.parent?.remove(f.mesh); f.mesh.geometry?.dispose(); f.mesh.material?.dispose(); }
   fxItems.length = 0;
@@ -718,7 +744,7 @@ function extraFx(id) {
 
 // ---------- состояние
 let manualDoors = false;
-let active = null, t0 = 0, touched = false, camGoal = null, dragging = false, idleAt = 0, limitsAfter = null;
+let active = null, t0 = 0, touched = false, camGoal = null, dragging = false, idleAt = 0, limitsAfter = null, shadowUntil = 0;
 const sA = new THREE.Spherical(), sB = new THREE.Spherical(), tmpV = new THREE.Vector3();
 const qTmp = new THREE.Quaternion(), qTmp2 = new THREE.Quaternion();
 const vB = new THREE.Vector3(), vD = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0);
@@ -747,6 +773,8 @@ function setService(s) {
   if (s && s.id !== "android" && box.clientWidth > 980) camGoal.pos.sub(camGoal.target).multiplyScalar(1.12).add(camGoal.target);
   if (s) extraFx(s.id);
   if (reduce) { camera.position.copy(camGoal.pos); controls.target.copy(camGoal.target); camGoal = null; }
+  shadowUntil = performance.now() + 1500;   // детали услуги появляются/прячутся — тень обновить
+  invalidate();
 }
 window.addEventListener("svc:select", (e) => setService(e.detail));
 
@@ -803,10 +831,23 @@ function pickAt(e) {
 const clock = new THREE.Clock(); let running = false, visible = true;
 const ease = (cur, tgt, dt, k = 7) => cur + (tgt - cur) * (1 - Math.exp(-k * dt));
 const tmpC = new THREE.Color();
-function frame() {
+// слабый телефон не тянет 60 кадров — понемногу снижаем чёткость (pixel ratio), пока кадр не уложится; только вниз, до 1
+// На плотных экранах (iPhone) ниже 1,25 не опускаемся: дальше края машины становятся ступеньками,
+// а в режиме энергосбережения Safari и так держит 30 к/с — это не повод портить картинку.
+const PR_MIN = Math.min(pixelRatio, devicePixelRatio >= 2 ? 1.25 : 1);
+const perf = { last: 0, ema: 16, n: 0 };
+function adaptResolution(now, rendered) {
+  const gap = now - perf.last; perf.last = now;
+  if (!rendered || gap > 200 || intro.on || pixelRatio <= PR_MIN) { perf.n = 0; return; }   // считаем только подряд нарисованные кадры
+  perf.ema += (gap - perf.ema) * 0.05;
+  if (++perf.n < 90 || perf.ema < 26) return;                    // ~1,5 с стабильно медленнее ~38 к/с
+  pixelRatio = Math.max(PR_MIN, +(pixelRatio - 0.25).toFixed(2)); perf.n = 0; perf.ema = 16;
+  renderer.setPixelRatio(pixelRatio); composer.setPixelRatio(pixelRatio); resize();
+}
+function frame(now) {
   if (!running) return;
   requestAnimationFrame(frame);
-  if (visible) draw();
+  adaptResolution(now, visible && draw());
 }
 let simT = 0, scrollTurn = 0;
 function draw(fixedDt) {
@@ -902,15 +943,27 @@ function draw(fixedDt) {
   const face = svc.android?.[0]?.userData.face; if (face) face.material.opacity = anim.screen;
   for (const id of ["android", "ambient", "sound"]) (svc[id] || []).forEach((m) => (m.visible = (m.material.userData.glow > 0.02) || active === id));
   for (const f of fxItems) f.tick(t);
-  if (box.clientWidth > 980) {
+  let viewMoving = false;
+  if (boxW > 980) {   // ширина из resize(): читать clientWidth каждый кадр — лишний пересчёт вёрстки при прокрутке
     view.offYGoal = active && active !== "android" ? 0.05 : -0.06;
     const prev = view.offY; view.offY = ease(view.offY, view.offYGoal, dt, 4);
-    if (Math.abs(view.offY - prev) > 1e-5) { applyOffset(); camera.updateProjectionMatrix(); }
+    if (Math.abs(view.offY - prev) > 1e-5) { applyOffset(); camera.updateProjectionMatrix(); viewMoving = true; }
   }
-  controls.update();
+  const camMoved = controls.update();
+  // что-то в машине двигается — тень пересчитать (двери, багажник, бампер, въезд)
+  const partsMoving = intro.on || active === "bumper" || Math.abs(anim.doors - goal.doors) > 1e-3 || Math.abs(anim.hatch - goal.hatch) > 1e-3 || anim.front > 1e-3;
+  if (partsMoving || performance.now() < shadowUntil) renderer.shadowMap.needsUpdate = true;
+  // рисуем, только если кадр отличается от прошлого. Выбрана услуга — там пульсации и свет, рисуем всегда.
+  let settling = false;
+  for (const k in anim) if (Math.abs(anim[k] - goal[k]) > 1e-3) { settling = true; break; }
+  if (!settling) for (const id in svc) if (svc[id].some((m) => m.material.userData.glow > 2e-3)) { settling = true; break; }
+  const busy = fixedDt || dirty > 0 || active || camGoal || dragging || camMoved || partsMoving || settling || viewMoving;
+  if (!busy) return false;
+  if (dirty > 0) dirty--;
   composer.render();
+  return true;
 }
-function start() { if (!running) { running = true; clock.getDelta(); frame(); } }
+function start() { if (!running) { running = true; clock.getDelta(); frame(perf.last = performance.now()); } }
 // сдвиг картинки на широком экране: вправо — панель, сверху — заголовок.
 // Когда выбрана услуга, заголовок уходит, и машина плавно поднимается в центр.
 const view = { offY: -0.06, offYGoal: -0.06 };
@@ -918,8 +971,10 @@ function applyOffset() {
   const w = box.clientWidth, h = box.clientHeight; if (w <= 980) return;
   camera.setViewOffset(w, h, Math.min(200, w * 0.12), h * view.offY, w, h);
 }
+let boxW = box.clientWidth;
 function resize() {
   const w = box.clientWidth, h = box.clientHeight; if (!w || !h) return;
+  boxW = w; invalidate();
   renderer.setSize(w, h, false); composer.setSize(w, h); bloom.setSize(w / 2, h / 2); camera.aspect = w / h;
   if (mirror) { const pr = renderer.getPixelRatio(); mirror.getRenderTarget().setSize(Math.round(w * pr * 0.6), Math.round(h * pr * 0.6)); }
   camera.fov = w < 600 ? 38 : 30;
@@ -929,4 +984,4 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 new ResizeObserver(resize).observe(box);
-new IntersectionObserver(([e]) => { visible = e.isIntersecting; }, { threshold: 0.01 }).observe(box);
+new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) invalidate(); }, { threshold: 0.01 }).observe(box);
