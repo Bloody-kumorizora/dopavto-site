@@ -3,6 +3,7 @@
 // Координаты модели: X — ширина, Y — вверх, Z — вперёд. На сцене машина повёрнута носом в +X.
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { Reflector } from "three/addons/objects/Reflector.js";
@@ -15,8 +16,8 @@ const box = document.getElementById("car");
 const loading = document.getElementById("carLoading");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const AMBER = new THREE.Color("#F5A623");
-const MODEL_URL = "carconcept.glb?v=1";
-const MODEL_BYTES = 11778688;   // настоящий размер модели — для честного процента загрузки
+const MODEL_URL = "carconcept-draco.glb?v=3";   // сжатая модель: геометрия Draco, текстуры WebP (до 2 МБ вместо 11,8)
+const MODEL_BYTES = 2063088;   // настоящий размер модели — для честного процента загрузки
 
 let arrived = false;
 const markArrived = () => { if (arrived) return; arrived = true; window.dispatchEvent(new Event("car:arrived")); };
@@ -170,6 +171,9 @@ const add = (id, mesh) => { (svc[id] ||= []).push(mesh); mesh.userData.svc = id;
 
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
 const loader = new GLTFLoader();
+// распаковщик сжатой геометрии (Draco) — с того же CDN и той же версии, что и three.js
+const draco = new DRACOLoader(); draco.setDecoderPath("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/");
+loader.setDRACOLoader(draco);
 loader.load(MODEL_URL, async (gltf) => {
   model = gltf.scene; car.add(model);
   model.traverse((o) => { if (o.name) N[o.name] = o; });
@@ -185,7 +189,7 @@ loader.load(MODEL_URL, async (gltf) => {
       m.clearcoat = 1; m.clearcoatRoughness = 0.04;
     }
     if (m.name === "Glass") { glassMats.add(m); m.userData.op = m.opacity; o.castShadow = false; }
-    if (/^Body/.test(part) && (/^Paint|Mechanical|Mirror/.test(m.name) || m.name === "")) shellMats.add(m);
+    if (/^Body/.test(part) && (/^Paint|Mechanical|Mirror/.test(m.name) || m.name === "" || /^Material_\d+$/.test(m.name))) shellMats.add(m);
   });
   model.traverse((o) => { if (/^License/i.test(o.name)) o.visible = false; });   // на номере надпись-товарный знак Khronos — не показываем
   makePivots();

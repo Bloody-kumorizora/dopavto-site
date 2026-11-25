@@ -27,7 +27,7 @@ python -m http.server 8000
 | `services.js` | список услуг: тексты, ракурсы камеры |
 | `page.js` | выбор услуги, форма заявки, просмотр фото, анимации при прокрутке |
 | `car.js` | 3D-сцена (three.js): машина, материалы, узлы услуг, эффекты |
-| `carconcept.glb` | 3D-модель машины |
+| `carconcept-draco.glb` | 3D-модель машины, сжатая: геометрия Draco, текстуры WebP (2 МБ вместо 11,8) |
 | `img/` | фото работ мастера |
 | `logo.svg` | логотип |
 
@@ -35,7 +35,7 @@ python -m http.server 8000
 
 - 3D-модель: [Car Concept](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/CarConcept),
   Khronos Group, на основе модели Unity Fan. Лицензия [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-  Изменения: окраска, материалы, детали услуг, багажник и фонари добавлены в коде (`car.js`).
+  Изменения: модель сжата (Draco + WebP); окраска, материалы, детали услуг, багажник и фонари добавлены в коде (`car.js`).
 - 3D-движок: [three.js](https://threejs.org/) (MIT), подключается с CDN.
 - Шрифты: Unbounded и Golos Text (SIL Open Font License).
 - Фото работ — мастера DopAvto, используются с его разрешения.
