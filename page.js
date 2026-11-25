@@ -84,6 +84,10 @@
     const b = pick.querySelector(`[data-id="${a.dataset.ask}"]`); b && b.setAttribute("aria-pressed", "true");
   });
 
+  // ширина полосы прокрутки — CSS растягивает 3D-сцену на всё окно (100vw), но без этой полосы
+  const setSbw = () => document.documentElement.style.setProperty("--sbw", (innerWidth - document.documentElement.clientWidth) + "px");
+  setSbw(); addEventListener("resize", setSbw, { passive: true });
+
   // ---------- шапка прячется при прокрутке вниз
   const top = document.querySelector(".top"), stage = document.querySelector(".stage"); let lastY = scrollY;
   addEventListener("scroll", () => {

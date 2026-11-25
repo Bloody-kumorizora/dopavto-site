@@ -404,8 +404,12 @@ section[id] { scroll-margin-top: 80px; }
   h1 { font-size: clamp(1.75rem, 3.6vw, 2.9rem); }
 }
 @media (min-width: 981px) {
-  /* 3D-сцена начинается от самого верха, под полупрозрачной шапкой — без полосы-шва */
-  .car { inset: 0; }
+  /* 3D-сцена начинается от самого верха, под полупрозрачной шапкой — без полосы-шва.
+     Сетка сцены не шире 1400 px, а холст растягиваем на всё окно: на больших мониторах по бокам нет пустых полос.
+     --bleed — на сколько окно (без полосы прокрутки, --sbw ставит page.js) шире сетки с каждой стороны */
+  .stage-grid { --bleed: max(0px, calc((100vw - var(--sbw, 0px) - 1400px) / 2)); }
+  .car { inset: 0 calc(-1 * var(--bleed)); }
+  .car .car-tools { left: calc(var(--bleed) + var(--gutter)); }   /* зум — по колонке контента, а не у края окна */
   .stage::after { inset: 0 0 auto 0; }
 }
 
@@ -469,7 +473,7 @@ html.lb-open { overflow: hidden; }
 .car:has(.car-fallback) .car-tools, .car:has(.car-fallback) .car-hint { display: none; }
 /* на широком экране холст на весь первый экран — фото ставим между заголовком, панелью и кнопками, не поверх них */
 @media (min-width: 981px) {
-  .car-fallback { --l: max(var(--gutter), calc((100% - var(--max)) / 2 + var(--gutter))); --r: max(440px, 34%);
+  .car-fallback { --l: calc(var(--bleed, 0px) + var(--gutter)); --r: calc(var(--bleed, 0px) + 440px);
     inset: 40% auto auto var(--l); width: calc(100% - var(--l) - var(--r)); height: calc(60% - 140px); object-position: 50% 12%; }   /* в кадре остаётся экран магнитолы */
 }
 /* широкий экран: кнопки услуг стоят в две строки (~116 px снизу) — подсказка и зум выше них, а не поверх */
