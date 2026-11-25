@@ -18,6 +18,7 @@ const bvhReady = import("three-mesh-bvh").then((b) => { THREE.Mesh.prototype.ray
 const box = document.getElementById("car");
 const loading = document.getElementById("carLoading");
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const DEBUG = new URLSearchParams(location.search).has("debug");   // ?debug=1 — счётчик кадров и нагрузки поверх машины
 const AMBER = new THREE.Color("#F5A623");
 const MODEL_URL = "carconcept-draco.glb?v=3";   // сжатая модель: геометрия Draco, текстуры WebP (до 2 МБ вместо 11,8)
 const MODEL_BYTES = 2063088;   // настоящий размер модели — для честного процента загрузки
@@ -46,7 +47,8 @@ renderer.setPixelRatio(pixelRatio);
 renderer.setClearColor("#121821");
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
-renderer.shadowMap.enabled = true;
+// телефон: динамической тени нет — под машиной уже лежит мягкое пятно (ao). Замер: −10…19% времени кадра
+renderer.shadowMap.enabled = !PHONE;
 renderer.localClippingEnabled = true;
 const trunkClip = new THREE.Plane();   // всё, что за передней стенкой багажника (задние сиденья), не рисуем
 renderer.shadowMap.type = PHONE ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
@@ -136,7 +138,7 @@ pool.rotation.x = -Math.PI / 2; pool.position.y = 0.001; scene.add(pool);
 const ao = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 2.7), new THREE.MeshBasicMaterial({ map: radial([[0, "rgba(0,0,0,.75)"], [.6, "rgba(0,0,0,.35)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false }));
 ao.rotation.x = -Math.PI / 2; ao.position.set(0.24, 0.002, 0); scene.add(ao);
 const shadow = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.45 }));
-shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.003; shadow.receiveShadow = true; scene.add(shadow);
+shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.003; shadow.receiveShadow = true; shadow.visible = !PHONE; scene.add(shadow);
 
 // постобработка: мягкое свечение у фар, экрана, подсветки и лучей
 const composer = new EffectComposer(renderer);
@@ -214,7 +216,11 @@ loader.load(MODEL_URL, async (gltf) => {
     if (m.name === "Glass") { glassMats.add(m); m.userData.op = m.opacity; o.castShadow = false; }
     if (/^Body/.test(part) && (/^Paint|Mechanical|Mirror/.test(m.name) || m.name === "" || /^Material_\d+$/.test(m.name))) shellMats.add(m);
   });
-  model.traverse((o) => { if (/^License/i.test(o.name)) o.visible = false; });   // на номере надпись-товарный знак Khronos — не показываем
+  model.traverse((o) => { if (/^License/i.test(o.name)) o.visible = false; });
+  // прозрачное двустороннее three.js рисует в два прохода (изнанка, потом лицо). В рентгене таких деталей ~40 —
+  // на телефоне рисуем их за один проход. Замер «Автозвук»: 340k→232k треугольников, 11,1→5,2 мс
+  // transmission задан и в самой модели (не только у стекла выше) — на телефоне выключаем у всех материалов
+  if (PHONE) model.traverse((o) => { if (!o.isMesh) return; const m = o.material; if (m.side === THREE.DoubleSide) m.forceSinglePass = true; if (m.transmission > 0) { m.transmission = 0; m.transparent = true; } });   // на номере надпись-товарный знак Khronos — не показываем
   const bvh = await bvhReady;
   if (bvh) model.traverse((o) => { if (o.isMesh && !o.geometry.boundsTree) o.geometry.boundsTree = new bvh.MeshBVH(o.geometry); });
   makePivots();
@@ -376,7 +382,9 @@ function dressMaterial(m) {
   if (n === "Mirror") { m.metalness = 1; m.roughness = 0.02; m.envMapIntensity = 2; }
   if (n === "Glass") {   // тонированное стекло: в основном отражает небо и софтбоксы, салон виден еле-еле
     m.roughness = 0; m.metalness = 0; m.envMapIntensity = 2.2; if (m.color) m.color.set("#1a2026");
-    if ("transmission" in m) { m.transmission = 0.22; m.thickness = 0.01; m.ior = 1.5; }
+    // transmission заставляет three.js каждый кадр рисовать всю машину ещё раз (отдельный проход под стекло).
+    // На телефоне стекло просто полупрозрачное. Замер: 295→159 draw calls, 11,7→5,0 мс за кадр
+    if ("transmission" in m && !PHONE) { m.transmission = 0.22; m.thickness = 0.01; m.ior = 1.5; }
     if ("clearcoat" in m) { m.clearcoat = 1; m.clearcoatRoughness = 0; }
   }
   // --- колёса
@@ -885,10 +893,13 @@ function draw(fixedDt) {
   controls.autoRotate = false;   // машина крутится только когда её тянут мышью или пальцем
   // рентген кузова
   const op = THREE.MathUtils.lerp(1, 0.1, anim.xray);
-  shellMats.forEach((m) => { m.transparent = op < 0.999; m.opacity = op; m.depthWrite = op > 0.5; });
+  // смена transparent требует другого варианта шейдера: без needsUpdate three.js продолжает рисовать непрозрачным
+  // (раньше рентген работал случайно — шейдер перевыбирался при пересчёте тени). Вариант собран заранее, пауз нет.
+  const setT = (m, t) => { if (m.transparent !== t) { m.transparent = t; m.needsUpdate = true; } };
+  shellMats.forEach((m) => { setT(m, op < 0.999); m.opacity = op; m.depthWrite = op > 0.5; });
   const rf = Math.max(anim.roof, anim.xray);
-  roofMats.forEach((m) => { const base = m.userData.op ?? 1; m.opacity = THREE.MathUtils.lerp(base, 0.04, rf); m.transparent = m.opacity < 0.999 || m.name === "Glass"; m.depthWrite = m.opacity > 0.5; });
-  glassMats.forEach((m) => { m.opacity = THREE.MathUtils.lerp(m.userData.op ?? 1, 0.15, anim.xray); m.transparent = true; });
+  roofMats.forEach((m) => { const base = m.userData.op ?? 1; m.opacity = THREE.MathUtils.lerp(base, 0.04, rf); setT(m, m.opacity < 0.999 || m.name === "Glass"); m.depthWrite = m.opacity > 0.5; });
+  glassMats.forEach((m) => { m.opacity = THREE.MathUtils.lerp(m.userData.op ?? 1, 0.15, anim.xray); setT(m, true); });
   renderer.toneMappingExposure = THREE.MathUtils.lerp(1.05, 0.4, anim.night);
   hemi.intensity = THREE.MathUtils.lerp(0.35, 0.08, anim.night);
   key.intensity = THREE.MathUtils.lerp(1.6, 0.25, anim.night);
@@ -960,9 +971,27 @@ function draw(fixedDt) {
   const busy = fixedDt || dirty > 0 || active || camGoal || dragging || camMoved || partsMoving || settling || viewMoving;
   if (!busy) return false;
   if (dirty > 0) dirty--;
-  composer.render();
+  if (hud) { renderer.info.reset(); const s = performance.now(); composer.render(); hud.frame(performance.now() - s); }
+  else composer.render();
   return true;
 }
+// ---------- ?debug=1: что тратит кадр. «мс CPU» — время команд отрисовки; если к/с низкие, а мс мало — упираемся в видеочип
+const hud = DEBUG ? (() => {
+  renderer.info.autoReset = false;
+  const el = document.createElement("pre");
+  el.style.cssText = "position:fixed;left:8px;top:72px;z-index:99;margin:0;padding:8px 10px;border-radius:8px;background:rgba(0,0,0,.78);color:#9f9;font:12px/1.35 ui-monospace,Menlo,monospace;pointer-events:none;white-space:pre";
+  document.body.appendChild(el);
+  let n = 0, cpu = 0, calls = 0, tris = 0, gaps = [], last = performance.now(), from = last;
+  const fmt = (v) => (v >= 1e6 ? (v / 1e6).toFixed(2) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : v);
+  const show = () => {
+    const now = performance.now(), sec = (now - from) / 1000; gaps.sort((a, b) => a - b);
+    const p95 = gaps.length ? gaps[Math.floor(gaps.length * 0.95)] : 0;
+    el.textContent = `к/с ${n ? Math.round(n / sec) : 0} (рисует только при движении)\nкадр p95 ${p95.toFixed(1)} мс\nмс CPU ${n ? (cpu / n).toFixed(1) : "–"}\npixelRatio ${renderer.getPixelRatio()}  ${renderer.domElement.width}×${renderer.domElement.height}\ndraw calls ${n ? Math.round(calls / n) : "–"}\nтреугольники ${n ? fmt(Math.round(tris / n)) : "–"}\nшейдеры ${renderer.info.programs.length}\n${PHONE ? "режим телефона" : "режим компьютера"}`;
+    n = cpu = calls = tris = 0; gaps = []; from = now;
+  };
+  setInterval(show, 1000);
+  return { frame(ms) { const now = performance.now(); if (now - last < 200) gaps.push(now - last); last = now; n++; cpu += ms; calls += renderer.info.render.calls; tris += renderer.info.render.triangles; } };
+})() : null;
 function start() { if (!running) { running = true; clock.getDelta(); frame(perf.last = performance.now()); } }
 // сдвиг картинки на широком экране: вправо — панель, сверху — заголовок.
 // Когда выбрана услуга, заголовок уходит, и машина плавно поднимается в центр.

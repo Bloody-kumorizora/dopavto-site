@@ -212,7 +212,6 @@ footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wr
 footer a { color: var(--on-night); }
 
 /* плашка демо */
-.demo-ribbon { background: var(--amber); color: var(--amber-ink); font-size: .85rem; padding: 10px var(--gutter); text-align: center; }
 
 /* =====================================================================
    v2: первый экран на всю ширину + анимации
