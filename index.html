@@ -12,7 +12,7 @@
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <link rel="preload" href="carconcept-draco.glb?v=3" as="fetch" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
-<link rel="stylesheet" href="style.css?v=77">
+<link rel="stylesheet" href="style.css?v=79">
 </head>
 <body>
 
@@ -67,6 +67,25 @@
         <h2 id="worksH">Примеры работ</h2>
         <p>Магнитолы встают в штатное место, рамка подбирается под панель, провода спрятаны. Нажмите на фото, чтобы рассмотреть.</p>
       </div>
+      <!-- до и после: одна карточка на пару, кадр сам сменяется на «после», переключатель — сравнить вручную -->
+      <div class="ba" role="list" aria-label="До и после">
+        <figure class="ba-card" role="listitem">
+          <div class="ba-view">
+            <img class="ba-before" src="img/ba-light-before.webp" alt="BMW до установки: дверь без подсветки" loading="lazy" width="960" height="720">
+            <img class="ba-after" src="img/ba-light-after.webp" alt="BMW после установки: красная контурная линия по двери и подсветка ниши" loading="lazy" width="960" height="720">
+            <div class="ba-switch" role="group" aria-label="Показать фото"><button type="button" data-show="before" aria-pressed="true">До</button><button type="button" data-show="after" aria-pressed="false">После</button></div>
+          </div>
+          <figcaption><b>Подсветка салона</b>Контурная линия по двери и подсветка ниши, провода в обшивке</figcaption>
+        </figure>
+        <figure class="ba-card" role="listitem">
+          <div class="ba-view">
+            <img class="ba-before" src="img/ba-park-before.webp" alt="Задний бампер до установки: разметка датчиков малярным скотчем" loading="lazy" width="960" height="720">
+            <img class="ba-after" src="img/ba-park-after.webp" alt="Задний бампер после установки: датчики парктроника в бампере" loading="lazy" width="720" height="540">
+            <div class="ba-switch" role="group" aria-label="Показать фото"><button type="button" data-show="before" aria-pressed="true">До</button><button type="button" data-show="after" aria-pressed="false">После</button></div>
+          </div>
+          <figcaption><b>Парктроники</b>Размечаем по скотчу, сверлим и ставим датчики в задний бампер</figcaption>
+        </figure>
+      </div>
       <div class="works">
         <figure class="w1"><img src="img/work-1.webp" alt="Nissan: Android-магнитола с широким экраном на месте штатной" loading="lazy" width="640" height="480"><figcaption><b>Nissan</b>Широкий экран на месте штатной магнитолы</figcaption></figure>
         <figure class="w2"><img src="img/work-2.webp" alt="Hyundai: синяя контурная подсветка дверей и магнитола" loading="lazy" width="640" height="480"><figcaption><b>Hyundai</b>Контурная подсветка салона и магнитола</figcaption></figure>
@@ -75,6 +94,8 @@
         <figure class="w5"><img src="img/work-5.webp" alt="Peugeot: Android-магнитола с навигатором" loading="lazy" width="640" height="480"><figcaption><b>Peugeot</b>Магнитола с навигатором</figcaption></figure>
         <figure class="w6 tall"><img src="img/work-6.webp" alt="Mercedes-Benz Sprinter: магнитола с эквалайзером" loading="lazy" width="360" height="480"><figcaption><b>Mercedes Sprinter</b>Магнитола и настройка звука</figcaption></figure>
         <figure class="w7 tall"><img src="img/work-7.webp" alt="Volkswagen Tiguan: Android-магнитола" loading="lazy" width="360" height="480"><figcaption><b>Volkswagen</b>Android-магнитола</figcaption></figure>
+        <figure class="w8"><img src="img/work-8.webp" alt="BMW: красная контурная подсветка задней двери" loading="lazy" width="1200" height="480"><figcaption><b>BMW</b>Контурная подсветка задних дверей</figcaption></figure>
+        <figure class="w9"><img src="img/work-9.webp" alt="Зеркало-регистратор с экраном на месте штатного зеркала" loading="lazy" width="1200" height="480"><figcaption><b>Зеркало-регистратор</b>Экран в зеркале, провод скрыт</figcaption></figure>
       </div>
     </div>
   </section>
@@ -172,7 +193,7 @@
 } }
 </script>
 <script src="services.js?v=53"></script>
-<script src="page.js?v=74"></script>
+<script src="page.js?v=75"></script>
 <script type="module" src="car.js?v=86"></script>
 </body>
 </html>

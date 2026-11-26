@@ -154,6 +154,27 @@
   lb.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; }, { passive: true });
   lb.addEventListener("touchend", (e) => { if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 50) show(cur + (dx < 0 ? 1 : -1)); sx = null; });
 
+  // ---------- до и после: карточка сама показывает «после», когда доехала до экрана; переключатель и тап — сравнить
+  const baShow = (card, after) => {
+    card.classList.toggle("is-after", after);
+    card.querySelectorAll(".ba-switch button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.show === "after") === after)));
+  };
+  document.querySelectorAll(".ba-card").forEach((card) => {
+    card.querySelector(".ba-switch").addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      card.dataset.touched = "1"; baShow(card, b.dataset.show === "after");
+    });
+    card.querySelector(".ba-view").addEventListener("click", (e) => {
+      if (e.target.closest(".ba-switch")) return;
+      card.dataset.touched = "1"; baShow(card, !card.classList.contains("is-after"));
+    });
+  });
+  const baio = new IntersectionObserver((list) => list.forEach((e) => {
+    if (!e.isIntersecting) return; baio.unobserve(e.target);
+    setTimeout(() => { if (!e.target.dataset.touched) baShow(e.target, true); }, reduce ? 0 : 1100);   // сначала видно «до», потом наплыв
+  }), { threshold: 0.6 });
+  document.querySelectorAll(".ba-card").forEach((c) => baio.observe(c));
+
   $("askForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const car = $("fCar").value.trim(), phone = $("fPhone").value.trim(), name = $("fName").value.trim();
