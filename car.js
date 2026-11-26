@@ -221,9 +221,9 @@ loader.load(MODEL_URL, async (gltf) => {
   // на телефоне рисуем их за один проход. Замер «Автозвук»: 340k→232k треугольников, 11,1→5,2 мс
   // transmission задан и в самой модели (не только у стекла выше) — на телефоне выключаем у всех материалов
   if (PHONE) model.traverse((o) => { if (!o.isMesh) return; const m = o.material; if (m.side === THREE.DoubleSide) m.forceSinglePass = true; if (m.transmission > 0) { m.transmission = 0; m.transparent = true; } });   // на номере надпись-товарный знак Khronos — не показываем
+  makePivots();   // до ускорителя лучей: makePivots режет накладку бампера на две детали
   const bvh = await bvhReady;
   if (bvh) model.traverse((o) => { if (o.isMesh && !o.geometry.boundsTree) o.geometry.boundsTree = new bvh.MeshBVH(o.geometry); });
-  makePivots();
   // задние сиденья 2+2 оказались бы внутри багажника — отрезаем их по передней стенке отсека
   model.traverse((o) => {
     if (!o.isMesh || !/^(InteriorSeats|InteriorPillar)/.test(partName(o))) return;
@@ -434,6 +434,28 @@ async function paint(gltf, variant) {
 }
 
 // петли: двери, задняя стеклянная крышка, передняя часть
+const FRONT_CUT_Z = 2.05;   // координата модели (Z — вперёд): передние колёса кончаются на ~2,03
+function splitFront(mesh, zMin) {
+  const g = mesh?.geometry; if (!g?.index || g.groups.length > 1) return;
+  model.updateMatrixWorld(true);
+  const toModel = new THREE.Matrix4().copy(model.matrixWorld).invert().multiply(mesh.matrixWorld);
+  const pos = g.attributes.position, idx = g.index.array, a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const keep = [], take = [];
+  for (let i = 0; i < idx.length; i += 3) {
+    a.fromBufferAttribute(pos, idx[i]).applyMatrix4(toModel); b.fromBufferAttribute(pos, idx[i + 1]).applyMatrix4(toModel); c.fromBufferAttribute(pos, idx[i + 2]).applyMatrix4(toModel);
+    ((a.z + b.z + c.z) / 3 > zMin ? take : keep).push(idx[i], idx[i + 1], idx[i + 2]);
+  }
+  if (!take.length) return;
+  const fg = new THREE.BufferGeometry();
+  for (const k in g.attributes) fg.setAttribute(k, g.attributes[k]);   // вершины общие, разные только треугольники
+  fg.setIndex(take); fg.computeBoundingBox(); fg.computeBoundingSphere();
+  g.setIndex(keep); g.computeBoundingBox(); g.computeBoundingSphere();
+  g.boundsTree = undefined;   // индекс изменился — ускоритель лучей пересоберётся
+  const fm = new THREE.Mesh(fg, mesh.material); fm.name = mesh.name + "Front";
+  fm.castShadow = mesh.castShadow; fm.receiveShadow = mesh.receiveShadow;
+  mesh.parent.add(fm); fm.position.copy(mesh.position); fm.quaternion.copy(mesh.quaternion); fm.scale.copy(mesh.scale);
+  fm.updateMatrixWorld(true); pivots.front.attach(fm); N[fm.name] = fm;
+}
 function makePivots() {
   const hinge = (name, parts, pos) => {
     const g = new THREE.Group(); g.position.set(...pos); model.add(g); g.updateMatrixWorld();
@@ -443,6 +465,9 @@ function makePivots() {
   if (N.BodyDoorLColor1) pivots.doorL = N.BodyDoorLColor1;
   if (N.BodyDoorRColor1) pivots.doorR = N.BodyDoorRColor1;
   if (N.BodyHood) pivots.front = N.BodyHood;
+  // чёрная нижняя накладка в модели одна на всю машину — её передняя часть (губа и клыки бампера, впереди
+  // передних колёс) отрезается в отдельную деталь и ездит вместе с бампером, а не остаётся висеть
+  if (pivots.front) for (const n of ["BodyPanelsColor2", "BodyUnderside"]) splitFront(N[n], FRONT_CUT_Z);
   for (const k in pivots) pivots[k].userData.rest = { pos: pivots[k].position.clone(), rot: pivots[k].rotation.clone(), q: pivots[k].quaternion.clone() };
   // двери «ламбо»: подъём вокруг поперечной оси машины (X модели) у передней петли + лёгкий наклон наружу
   for (const [k, side] of [["doorL", 1], ["doorR", -1]]) {
@@ -557,7 +582,7 @@ function buildServices() {
   const camGeo = () => new THREE.CylinderGeometry(0.014, 0.016, 0.02, 24);
   const camMat = () => std("#121518", { roughness: 0.25 });
   const rc = onSurface("rearcam", camGeo(), camMat(), [0, 0.44, -4], [0, 0, 1], 0.02); rc && (rc.name = "cam_rear");
-  const front = onSurface("cam360", camGeo(), camMat(), [0, 0.4, 5], [0, 0, -1], 0.02); front && (front.name = "cam_front");
+  const front = onSurface("cam360", camGeo(), camMat(), [0, 0.4, 5], [0, 0, -1], 0.02); if (front) { front.name = "cam_front"; pivots.front?.attach(front); }
   const rear = svc.rearcam?.[0]; if (rear) (svc.cam360 ||= []).push(rear);
   [[1.05, 1], [-1.05, -1]].forEach(([x, s]) => {
     const p = surface([x, 0.2, 0.42], [0, 1, 0])?.point; if (!p) return;
@@ -568,7 +593,8 @@ function buildServices() {
   const sGeo = () => new THREE.CylinderGeometry(0.017, 0.017, 0.008, 24), sMat = () => std("#8d949b", { roughness: 0.3, metalness: 0.6 });   // датчики в цвет кузова
   [-0.68, -0.25, 0.25, 0.68].forEach((x) => {
     onSurface("park", sGeo(), sMat(), [x, 0.42, -4], [0, 0, 1], 0.008);
-    onSurface("park", sGeo(), sMat(), [x * 0.85, 0.36, 5], [0, 0, -1], 0.008);
+    const fs = onSurface("park", sGeo(), sMat(), [x * 0.85, 0.36, 5], [0, 0, -1], 0.008);
+    if (fs) pivots.front?.attach(fs);   // передние датчики — в бампере, едут вместе с ним
   });
   // противотуманки
   [0.62, -0.62].forEach((x) => {
@@ -576,9 +602,20 @@ function buildServices() {
     if (m) pivots.front?.attach(m);
   });
   // видеорегистратор у верхнего края лобового и провод, спрятанный в обшивку
+  // Раньше стоял по жёстким координатам внутри обшивки потолка и вместе с проводом торчал над крышей.
+  // Теперь место ищется лучами: регистратор — прямо под лобовым стеклом, провод — на 2,5 см ниже обшивки и стоек.
+  const CEIL = /Windshield|Gasket|Pillar|Roof|Cage/i;
+  const ceilY = (x, z, fallback) => { const h = surface([x, 0.75, z], [0, 1, 0], false, CEIL); return h ? model.worldToLocal(h.point.clone()).y : fallback; };
+  const sideX = (y, z, s, fallback) => { const h = surface([0, y, z], [s, 0, 0], true, /Pillar|Cage|Door|Dash/i); return h ? model.worldToLocal(h.point.clone()).x - s * 0.03 : fallback; };
+  const DCZ = 0.5;   // по центру лобового, там, где обычно зеркало заднего вида
   const dc = add("dashcam", new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.05), std("#121518", { roughness: 0.3 })));
-  dc.position.set(0.05, 1.06, 0.2);
-  const path = new THREE.CatmullRomCurve3([[0.05, 1.07, 0.18], [-0.5, 1.09, 0.12], [-0.78, 1.04, 0.3], [-0.86, 0.86, 0.95], [-0.8, 0.6, 1.25], [-0.6, 0.45, 1.35]].map((p) => new THREE.Vector3(...p)));
+  dc.position.set(0.05, ceilY(0.05, DCZ, 1.09) - 0.045, DCZ);
+  const wy = (x, z) => ceilY(x, z, 1.05) - 0.025;
+  const path = new THREE.CatmullRomCurve3([
+    [0.05, dc.position.y + 0.02, DCZ - 0.03], [0.02, wy(0.02, 0.3), 0.3], [-0.45, wy(-0.45, 0.18), 0.18],   // вверх под обшивку и вдоль её края
+    [sideX(1.0, 0.3, -1, -0.74), wy(-0.7, 0.3), 0.3],                                                         // к левой стойке
+    [sideX(0.86, 0.95, -1, -0.84), 0.86, 0.95], [sideX(0.6, 1.25, -1, -0.78), 0.6, 1.25], [-0.6, 0.45, 1.35],    // вниз по стойке к блоку предохранителей
+  ].map((p) => new THREE.Vector3(...p)));
   const wire = add("dashcam", new THREE.Mesh(new THREE.TubeGeometry(path, 80, 0.007, 8), std("#2a2f35")));
   wire.visible = false; wire.name = "wire";
   // контурная подсветка: двери и панель
